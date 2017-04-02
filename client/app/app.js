@@ -11,6 +11,7 @@ import 'normalize.css';
 // import './app.scss'
 
 class ArticleList {
+
   constructor(guardianService) {
     "ngInject";
     console.log("angular material:", angularMaterial)
@@ -19,6 +20,10 @@ class ArticleList {
     this.searchText = '';
     this.section = '';
     
+  }
+
+  trimUrl(url, exp) {
+    return url.replace(exp || '', '');
   }
 
   fetchData() {
@@ -35,8 +40,23 @@ class ArticleList {
 }
 
 angular.module('app', [uiRouter])
-  .config(($locationProvider) => {
+  .config(($locationProvider, $stateProvider) => {
     "ngInject";
+
+    $stateProvider.state('article', {
+      url: '/test/:api/:apiUrl',
+      template: `<div>
+        <h3>loading article...</h3>
+      </div>`,
+      controller: function($stateParams, guardianService) {
+        "ngInject";
+        this.itemTitle = null;
+        const {apiUrl} = $stateParams;
+        guardianService.checkItem(apiUrl)
+          .then( data => console.log("data:", data));
+      }
+    })
+
     // @see: https://github.com/angular-ui/ui-router/wiki/Frequently-Asked-Questions
     // #how-to-configure-your-server-to-work-with-html5mode
     $locationProvider.html5Mode(true).hashPrefix('!');
@@ -61,7 +81,10 @@ angular.module('app', [uiRouter])
           <div class="md-list-item-text">
             <h3>{{item.webTitle}}</h3>
             published at:  <md-chip>{{item.webPublicationDate}}</md-chip>
-            <p>details at: <a target="_blank" href="{{item.apiUrl}}">link</a></p>
+            <p>details at: <a ui-sref="article({
+              apiUrl: listCtrl.trimUrl(item.apiUrl, 'https://content.guardianapis.com'), 
+              api: 'guardianapis'})">link</a>
+            </p>
           </div>
         </md-list-item>
       </md-list>
@@ -70,10 +93,12 @@ angular.module('app', [uiRouter])
     controllerAs: 'listCtrl'
 
   })
-  .factory('guardianService', function($q) {
+  .factory('guardianService', function($q, $http, $sce) {
       "ngInject";
+      const DOMAINS = {'guardianapis':'http://content.guardianapis.com'};
       const apiKey = '&api-key='+'2248788b-c2b4-4a83-81ac-998fee831795',
-       basicURL = 'http://content.guardianapis.com/search?',
+       basicURL = 'http://content.guardianapis.com',
+       action = '/search?',
        q = 'q=',
        section= 'news',
        searchParams = '',
@@ -81,7 +106,7 @@ angular.module('app', [uiRouter])
        order='order-by=relevance&',
        showBlocks='show-blocks=all&',
 
-       format = '&format=json',
+       format = '&format=jsonp',
        jsonp = '&JSONPRequest=?',
        searchType='&search=reactive';
 
@@ -93,8 +118,20 @@ angular.module('app', [uiRouter])
         console.log(thrownError);
       }
 
+      const checkItem = (url) => {
+        var _cb = '?callback=JSON_CALLBACK';
+        var _url = basicURL+url+apiKey+format+_cb;
+        // $sce.trustAsResourceUrl(_url);
+        console.log("_rul:", _url)
+        var test = 'https://content.guardianapis.com/news/2017/mar/21/a-bright-sun-today-its-down-to-the-atmosphere'+
+        apiKey;
+        $sce.trustAsResourceUrl(test);
+        // '?callback=JSON_CALLBACK';
+        return $http.get(test, {jsonpCallbackParam: 'callback'});
+      }
+
       const queryApi = params => {
-        var url = basicURL+
+        var url = basicURL+action+
           'section='+(params.section || section)+'&'+
           q+encodeURIComponent(params.searchFor)+
           apiKey
@@ -129,7 +166,8 @@ angular.module('app', [uiRouter])
       }
 
       return {
-        queryApi 
+        queryApi,
+        checkItem 
       };
   });
 
