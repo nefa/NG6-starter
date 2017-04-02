@@ -53,7 +53,7 @@ angular.module('app', [uiRouter])
         this.itemTitle = null;
         const {apiUrl} = $stateParams;
         guardianService.checkItem(apiUrl)
-          .then( data => console.log("data:", data));
+          // .then( data => console.log("data:", data));
       }
     })
 
@@ -95,6 +95,8 @@ angular.module('app', [uiRouter])
   })
   .factory('guardianService', function($q, $http, $sce) {
       "ngInject";
+
+      $http.defaults.headers.common['api-key'] = '2248788b-c2b4-4a83-81ac-998fee831795';
       const DOMAINS = {'guardianapis':'http://content.guardianapis.com'};
       const apiKey = '&api-key='+'2248788b-c2b4-4a83-81ac-998fee831795',
        basicURL = 'http://content.guardianapis.com',
@@ -120,14 +122,25 @@ angular.module('app', [uiRouter])
 
       const checkItem = (url) => {
         var _cb = '?callback=JSON_CALLBACK';
-        var _url = basicURL+url+apiKey+format+_cb;
+        // var _url = basicURL+url+apiKey+format+_cb;
         // $sce.trustAsResourceUrl(_url);
+        var _url = basicURL+url+apiKey;
         console.log("_rul:", _url)
-        var test = 'https://content.guardianapis.com/news/2017/mar/21/a-bright-sun-today-its-down-to-the-atmosphere'+
-        apiKey;
-        $sce.trustAsResourceUrl(test);
-        // '?callback=JSON_CALLBACK';
-        return $http.get(test, {jsonpCallbackParam: 'callback'});
+        
+        // $sce.trustAsResourceUrl(test);
+        //return $http.get(test, {jsonpCallbackParam: 'callback'});
+        jQ.ajax({
+          type: "GET",
+          dataType: "jsonp",
+          url: _url,
+          success: function(res) {
+            console.log("res:", res)
+          },
+          error: function(xhr, ajaxOptions, thrownError) {
+
+            console.log(xhr, thrownError);
+          }
+        })
       }
 
       const queryApi = params => {
