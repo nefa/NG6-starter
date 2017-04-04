@@ -1,0 +1,17 @@
+<h3>...articles here !</h3>
+<p>
+  search for :<input type="text" ng-model="listCtrl.searchText"> || <button ng-click="listCtrl.fetchCollection()">Send</button>
+</p>
+<hr />
+<md-list>
+  <md-list-item class="md-2-line" ng-repeat="item in listCtrl.collection">
+    <div class="md-list-item-text">
+      <h3>{{item.webTitle}}</h3>
+      published at:  <md-chip>{{item.webPublicationDate}}</md-chip>
+      <p>details at: <a ui-sref="article({
+        apiUrl: item.id, 
+        api: 'guardianapis'})">link</a>
+      </p>
+    </div>
+  </md-list-item>
+</md-list>
